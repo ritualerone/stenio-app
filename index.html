@@ -217,7 +217,7 @@ function rDT(){
   if(todosQuitados){obsHtml+="<div class=\"alert-box alert-s\" style=\"margin-bottom:16px\">&#10003; Acordo quitado — todas as parcelas foram pagas.</div>";}
   mc().innerHTML="<div class=\"topbar\"><div style=\"display:flex;align-items:center;gap:12px\"><button class=\"btn btn-o sm\" onclick=\"go('clientes')\">Voltar</button>"
     +"<div><div class=\"tb-title\">"+(dA?dA.cliente:"")+"</div><div class=\"tb-sub\">Processo: "+(dA?dA.numero_processo:"")+(dA&&dA.dono?" | Cliente: "+dA.dono:"")+"</div></div></div>"
-    +"<button class=\"btn btn-g\" onclick=\"openM()\">+ Parcela</button></div>"
+    +"<div style=\"display:flex;gap:8px\"><button class=\"btn btn-g\" onclick=\"openM()\">+ Parcela</button><button class=\"btn btn-o\" onclick=\"exportPDF()\">PDF</button></div>"
     +"<div class=\"body\">"+obsHtml
     +"<div class=\"sg\"><div class=\"sc\"><div class=\"sc-l\">Total</div><div class=\"sc-v\">"+fmt(tG)+"</div></div><div class=\"sc\"><div class=\"sc-l\">Recebido</div><div class=\"sc-v g\">"+fmt(tR)+"</div></div><div class=\"sc\"><div class=\"sc-l\">Repassado</div><div class=\"sc-v g\">"+fmt(tRep)+"</div></div><div class=\"sc\"><div class=\"sc-l\">Em Aberto</div><div class=\"sc-v a\">"+fmt(tA)+"</div></div></div>"
     +"<div class=\"card\"><div class=\"card-h\"><div class=\"card-t\">Parcelas</div><div style=\"display:flex;gap:7px;align-items:center\">"
@@ -367,5 +367,53 @@ function exportPDF(){
   // Tentar adicionar observacao ao acordo Erika
   await sb.from("acordos").update({observacao:"ATENCAO: O saldo em aberto informado (R$25.511,80) e R$111,80 maior que 127 parcelas de R$200,00. Valor residual destacado para conciliacao."}).eq("cliente","Erika de Souza Rodrigues").is("observacao",null);
 })();
+
+function exportPDF(){
+  var labels={todos:"Todas as Parcelas",aberto:"Parcelas em Aberto",quitado:"Parcelas Quitadas",atrasado:"Parcelas Atrasadas"};
+  var fi=dP.filter(function(p){if(dFil==="todos")return true;if(dFil==="aberto")return p.situacao==="Aberto";if(dFil==="quitado")return p.situacao==="Quitado";if(dFil==="atrasado")return isLate(p);return true;});
+  var tG=fi.reduce(function(s,p){return s+(+p.valor_total||0);},0);
+  var tR=fi.reduce(function(s,p){return s+(+p.valor_recebido||0);},0);
+  var tRep=fi.reduce(function(s,p){return s+(+p.valor_repassado||0);},0);
+  var tA=fi.filter(function(p){return p.situacao!=="Quitado";}).reduce(function(s,p){return s+(+p.valor_total||0);},0);
+  var rows=fi.map(function(p){
+    var l=isLate(p),sit=l?"Atrasado":p.situacao,c=sit==="Quitado"?"#15803d":sit==="Atrasado"?"#dc2626":"#d97706";
+    return "<tr style='background:"+(l?"#fff5f5":"#fff")+"'><td>"+p.numero_parcela+"</td><td>"+fmtD(p.data_vencimento)+"</td><td>"+fmtD(p.data_pagamento)+"</td><td>"+fmt(p.valor_total)+"</td><td>"+fmt(p.valor_recebido)+"</td><td>"+fmt(p.valor_repassado)+"</td><td>"+fmtD(p.data_repasse)+"</td><td>"+fmtD(p.programacao_repasse)+"</td><td style='color:"+c+";font-weight:600'>"+sit+"</td></tr>";
+  }).join("");
+  var w=window.open("","_blank");
+  w.document.write("<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Relatorio</title>"
+    +"<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px}"
+    +".hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:12px;border-bottom:3px solid #c9a84c}"
+    +".logo{font-size:15px;font-weight:bold;color:#0f1e35}.logo span{color:#c9a84c}.info{text-align:right;font-size:9px;color:#6b7280}"
+    +".obs{background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:9px 12px;margin-bottom:14px;font-size:10px;color:#92400e}"
+    +".stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}"
+    +".sc{background:#f8f5ef;border-radius:6px;padding:9px 11px;border:1px solid #e2d9c8}"
+    +".sl{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;font-weight:700}"
+    +".sv{font-size:13px;font-weight:bold;color:#0f1e35;margin-top:2px}"
+    +".sv.g{color:#15803d}.sv.a{color:#d97706}"
+    +"table{width:100%;border-collapse:collapse;margin-top:8px}"
+    +"thead tr{background:#0f1e35}th{padding:6px 8px;text-align:left;font-size:8.5px;font-weight:700;text-transform:uppercase;color:#e8c97a;white-space:nowrap}"
+    +"td{padding:5px 8px;border-bottom:1px solid #ede9e0;font-size:9.5px}"
+    +"tfoot tr{background:#f8f5ef}tfoot td{font-weight:700;padding:6px 8px;border-top:2px solid #e2d9c8}"
+    +".ft{margin-top:18px;text-align:center;font-size:8px;color:#9ca3af;border-top:1px solid #e2d9c8;padding-top:8px}"
+    +"@media print{@page{size:A4 landscape;margin:1.2cm}}</style></head><body>"
+    +"<div class='hdr'><div><div class='logo'>Stenio <span>Advocacia</span></div><div style='font-size:9px;color:#6b7280;margin-top:1px'>Controle de Repasses</div></div>"
+    +"<div class='info'>Emitido em: "+new Date().toLocaleDateString("pt-BR")+"<br>Filtro: "+(labels[dFil]||"Todos")+"</div></div>"
+    +(dA&&dA.observacao?"<div class='obs'>&#9888; "+dA.observacao+"</div>":"")
+    +"<h2 style='font-size:15px;color:#0f1e35;margin-bottom:3px'>"+(dA?dA.cliente:"")+"</h2>"
+    +"<p style='font-size:10px;color:#6b7280'>Processo: "+(dA?dA.numero_processo:"")+(dA&&dA.dono?" &nbsp;|&nbsp; Cliente: "+dA.dono:"")+"</p>"
+    +"<div class='stats'>"
+    +"<div class='sc'><div class='sl'>Total</div><div class='sv'>"+fmt(tG)+"</div></div>"
+    +"<div class='sc'><div class='sl'>Recebido</div><div class='sv g'>"+fmt(tR)+"</div></div>"
+    +"<div class='sc'><div class='sl'>Repassado</div><div class='sv g'>"+fmt(tRep)+"</div></div>"
+    +"<div class='sc'><div class='sl'>Em Aberto</div><div class='sv a'>"+fmt(tA)+"</div></div></div>"
+    +"<table><thead><tr><th>Parc.</th><th>Vencimento</th><th>Pagamento</th><th>Valor Total</th><th>Recebido</th><th>Repassado</th><th>Dt.Repasse</th><th>Prog.Repasse</th><th>Situacao</th></tr></thead>"
+    +"<tbody>"+rows+"</tbody>"
+    +"<tfoot><tr><td colspan='3'>Somatorio ("+fi.length+" parcelas)</td><td>"+fmt(tG)+"</td><td>"+fmt(tR)+"</td><td>"+fmt(tRep)+"</td><td colspan='2'></td><td></td></tr></tfoot></table>"
+    +"<div class='ft'>Stenio Advocacia &mdash; "+new Date().toLocaleDateString("pt-BR")+"</div>"
+    +"</body></html>");
+  w.document.close();
+  setTimeout(function(){w.print();},600);
+}
+
 go("clientes");
 </script></body></html>
