@@ -284,7 +284,7 @@ function openM(idx){
   el.onclick=function(e){if(e.target===el)el.remove();};document.body.appendChild(el);
 }
 async function saveP(pid){
-  var data={acordo_id:curAcordo.id,numero_parcela:+document.getElementById("f_num").value,situacao:document.getElementById("f_sit").value,data_vencimento:document.getElementById("f_ven").value||null,data_pagamento:document.getElementById("f_pag").value||null,valor_total:+(document.getElementById("f_vt").value)||0,valor_recebido:+(document.getElementById("f_vr").value)||0,valor_repassado:+(document.getElementById("f_vrep").value)||0,data_repasse:document.getElementById("f_drep").value||null,programacao_repasse:document.getElementById("f_prog").value||null,observacoes:document.getElementById("f_obs").value||null};
+  var data={acordo_id:curAcordo.id,numero_parcela:+document.getElementById("f_num").value,situacao:document.getElementById("f_sit").value,data_vencimento:document.getElementById("f_ven").value||null,data_pagamento:document.getElementById("f_pag").value||null,valor_total:+(document.getElementById("f_vt").value)||0,valor_recebido:+(document.getElementById("f_vr").value)||0,valor_repassado:+(document.getElementById("f_vrep").value)||0,data_repasse:document.getElementById("f_drep").value||null,programacao_repasse:document.getElementById("f_prog").value||null,observacoes:document.getElementById("f_obs").value||null,status_repasse:document.getElementById("f_rep")?document.getElementById("f_rep").value:"Pendente"};
   if(pid){await sb.from("parcelas").update(data).eq("id",pid);}else{await sb.from("parcelas").insert(data);}
   document.getElementById("mo").remove();var r=await sb.from("parcelas").select("*").eq("acordo_id",curAcordo.id).order("numero_parcela",{ascending:true});dP=r.data||[];rDT();
 }
