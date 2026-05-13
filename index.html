@@ -111,7 +111,7 @@ async function rClientes(){
     });
     html+="<div class=\"cli-card\">";
     html+="<div class=\"cli-header\" onclick=\"toggleCliente("+gi+")\">";
-    html+="<div><div class=\"cli-nome\">"+g.nome+"</div><div class=\"cli-stats\">"+g.acordos.length+" acordo(s) | Total: "+fmt(total)+" | Recebido: "+fmt(recebido)+(atrasados>0?" | <span style=\"color:#f87171\">"+atrasados+" atrasada(s)</span>":"")+"</div></div>";
+    html+="<div><div class=\"cli-nome\">"+g.nome+"</div><div class=\"cli-stats\">"+g.acordos.length+" acordo(s) | Total: "+fmt(total)+" | Recebido: "+fmt(recebido)+(atrasados>0?" | <span style=\"color:#f87171\">"+atrasados+" atrasada(s)</span>":"")+"</div></div><div style=\"position:fixed;bottom:24px;right:28px;z-index:100\"><button class=\"btn btn-p\" onclick=\"exportPDF()\" style=\"box-shadow:0 4px 14px rgba(15,30,53,.25);padding:10px 20px;font-size:.85rem\">&#128438; Exportar PDF</button></div>",
     html+="<div style=\"display:flex;gap:8px\">";
     html+="<button class=\"btn btn-g sm\" onclick=\"event.stopPropagation();go('novo-acordo','"+g.nome+"')\">+ Acordo</button>";
     html+="<span style=\"color:rgba(255,255,255,.4);font-size:1.2rem\" id=\"arrow-"+gi+"\">&#9660;</span></div></div>";
@@ -222,7 +222,7 @@ function rDT(){
     +"<div class=\"sg\"><div class=\"sc\"><div class=\"sc-l\">Total</div><div class=\"sc-v\">"+fmt(tG)+"</div></div><div class=\"sc\"><div class=\"sc-l\">Recebido</div><div class=\"sc-v g\">"+fmt(tR)+"</div></div><div class=\"sc\"><div class=\"sc-l\">Repassado</div><div class=\"sc-v g\">"+fmt(tRep)+"</div></div><div class=\"sc\"><div class=\"sc-l\">Em Aberto</div><div class=\"sc-v a\">"+fmt(tA)+"</div></div></div>"
     +"<div class=\"card\"><div class=\"card-h\"><div class=\"card-t\">Parcelas</div><div style=\"display:flex;gap:7px;align-items:center\">"
     +"<div class=\"tabs\"><button class=\"tab "+(dFil==="todos"?"active":"")+"\" onclick=\"dFil='todos';rDT()\">Todos</button><button class=\"tab "+(dFil==="aberto"?"active":"")+"\" onclick=\"dFil='aberto';rDT()\">Aberto</button><button class=\"tab "+(dFil==="quitado"?"active":"")+"\" onclick=\"dFil='quitado';rDT()\">Quitado</button><button class=\"tab "+(dFil==="atrasado"?"active":"")+"\" onclick=\"dFil='atrasado';rDT()\">Atrasado</button></div>"
-    +"<button class=\"btn btn-g sm\" onclick=\"openM()\">+</button><button class=\"btn btn-p sm\" onclick=\"exportPDF()\" style=\"margin-left:4px\">&#128438; PDF</button></div></div>"
+    +"<button class=\"btn btn-g sm\" onclick=\"openM()\">+</button></div></div>"
     +(fi.length===0?"<div class=\"empty\">Nenhuma parcela</div>":"<div class=\"tw\"><table><thead><tr><th>Parc.</th><th>Venc.</th><th>Pag.</th><th>Total</th><th>Recebido</th><th>Repassado</th><th>Dt.Rep.</th><th>Prog.Rep.</th><th>Em Aberto</th><th>Sit.</th><th>Acoes</th></tr></thead><tbody>"+rows+"</tbody>"
     +"<tfoot><tr class=\"tr-tot\"><td colspan=\"3\">Somatorio</td><td>"+fmt(tG)+"</td><td>"+fmt(tR)+"</td><td>"+fmt(tRep)+"</td><td colspan=\"2\"></td><td>"+fmt(tA)+"</td><td colspan=\"2\"></td></tr></tfoot></table></div>")
     +"</div></div>";
