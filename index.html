@@ -223,7 +223,7 @@ function rDT(){
       +"<td>"+fmtD(p.data_repasse)+"</td>"
       +"<td>"+fmtD(p.programacao_repasse)+"</td>"
       +"<td>"+(ea>0?"<span style=\"color:var(--amber);font-weight:600\">"+fmt(ea)+"</span>":"--")+"</td>"
-      +"<td><span class=\"badge "+(sitColor[sit]||"bx")+"\">"+sit+"</span></td>"
+      +"<td><span class=\"badge "+(sitColor[p.situacao]||"bx")+"\">"+p.situacao+"</span></td>"
       +"<td><span class=\"badge "+( p.status_repasse==="Repassado"?"bg":"bx")+"\">"+(p.status_repasse||"Pendente")+"</span></td>"
       +"<td><div style=\"display:flex;gap:4px\">"
       +"<button class=\"btn btn-o sm\" onclick=\"openM("+i+")\">Ed.</button>"
@@ -260,7 +260,7 @@ function rDT(){
     +(fi.length===0?"<div class=\"empty\">Nenhuma parcela</div>"
     :"<div class=\"tw\"><table><thead><tr>"
     +"<th>Parc.</th><th>Venc.</th><th>Pag.</th><th>Total</th><th>Recebido</th><th>Repassado</th><th>Dt.Rep.</th><th>Prog.Rep.</th><th>Em Aberto</th>"
-    +"<th>Recebimento</th><th>Repasse</th><th>Acoes</th>"
+    +"<th>Situacao</th><th>Repasse</th><th>Acoes</th>"
     +"</tr></thead><tbody>"+rows+"</tbody>"
     +"<tfoot><tr class=\"tr-tot\"><td colspan=\"3\">Somatorio ("+fi.length+")</td><td>"+fmt(tG)+"</td><td>"+fmt(tR)+"</td><td>"+fmt(tRep)+"</td><td colspan=\"2\"></td><td>"+fmt(tA)+"</td><td colspan=\"3\"></td></tr></tfoot>"
     +"</table></div>")
@@ -437,7 +437,8 @@ function exportPDF(){
 
 function exportPDF(){
   var labels={todos:"Todas as Parcelas",aberto:"Parcelas em Aberto",quitado:"Parcelas Quitadas",atrasado:"Parcelas Atrasadas",recebido:"Recebido - Pendente de Repasse"};
-  var fi=dP.filter(function(p){if(dFil==="todos")return true;var s=getSit(p);if(dFil==="aberto")return s==="Aberto";if(dFil==="recebido")return s==="Recebido";if(dFil==="quitado")return s==="Quitado";if(dFil==="atrasado")return s==="Atrasado";return true;});
+  var fi=dP.filter(function(p){if(dFil==="todos")return true;var s=getSit(p);if(dFil==="aberto")return s==="Aberto";if(dFil==="recebido")return s==="Recebido";if(dFil==="quitado")return s==="Quitado";
+    if(dFil==="pend-repasse")return p.status_repasse!=="Repassado"&&p.data_pagamento;if(dFil==="atrasado")return s==="Atrasado";return true;});
   var tG=fi.reduce(function(s,p){return s+(+p.valor_total||0);},0);
   var tR=fi.reduce(function(s,p){return s+(+p.valor_recebido||0);},0);
   var tRep=fi.reduce(function(s,p){return s+(+p.valor_repassado||0);},0);
