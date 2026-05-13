@@ -277,6 +277,7 @@ function openM(idx){
   el.innerHTML="<div class=\"modal\"><div style=\"display:flex;justify-content:space-between;margin-bottom:16px\"><strong>"+(par?"Editar Parcela "+par.numero_parcela:"Nova Parcela")+"</strong><button onclick=\"document.getElementById('mo').remove()\">X</button></div>"
     +"<div class=\"fg\">"
     +"<div class=\"fgg\"><label>N Parcela</label><input type=\"number\" id=\"f_num\" value=\""+(p.numero_parcela!=null?p.numero_parcela:nN)+"\" ></div>"
+    +"<div class=\"fgg\"><label>Situacao</label><select id=\"f_sit\"><option value=\"Aberto\" "+((p.situacao||"Aberto")==="Aberto"?"selected":"")+">Aberto</option><option value=\"Atrasado\" "+(p.situacao==="Atrasado"?"selected":"")+">Atrasado</option><option value=\"Quitado\" "+(p.situacao==="Quitado"?"selected":"")+">Quitado</option><option value=\"Parcial\" "+(p.situacao==="Parcial"?"selected":"")+">Parcial</option></select></div>"
     +"<div class=\"fgg\"><label>Vencimento</label><input type=\"date\" id=\"f_ven\" value=\""+(p.data_vencimento||"")+"\"></div>"
     +"<div class=\"fgg\"><label>Pagamento</label><input type=\"date\" id=\"f_pag\" value=\""+(p.data_pagamento||"")+"\"></div>"
     +"<div class=\"fgg\"><label>Valor Total R$</label><input type=\"number\" step=\".01\" id=\"f_vt\" value=\""+(p.valor_total||"")+"\"></div>"
@@ -297,6 +298,7 @@ async function saveP(pid){
   var data={
     acordo_id:curAcordo.id,
     numero_parcela:+document.getElementById("f_num").value,
+    situacao:document.getElementById("f_sit").value,
     data_vencimento:document.getElementById("f_ven").value||null,
     data_pagamento:document.getElementById("f_pag").value||null,
     valor_total:+(document.getElementById("f_vt").value)||0,
