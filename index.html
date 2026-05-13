@@ -275,18 +275,43 @@ function openM(idx){
   var p=par||{};
   var el=document.createElement("div");el.id="mo";el.className="mo";
   el.innerHTML="<div class=\"modal\"><div style=\"display:flex;justify-content:space-between;margin-bottom:16px\"><strong>"+(par?"Editar Parcela "+par.numero_parcela:"Nova Parcela")+"</strong><button onclick=\"document.getElementById('mo').remove()\">X</button></div>"
-    +"<div class=\"fg\"><div class=\"fgg\"><label>N Parcela</label><input type=\"number\" id=\"f_num\" value=\""+(p.numero_parcela!=null?p.numero_parcela:nN)+"\" ></div><div class=\"fgg\"><label>Situacao</label><select id=\"f_sit\"><option "+( (!p.situacao||p.situacao==="Aberto")?"selected":"")+">Aberto</option><option "+(p.situacao==="Quitado"?"selected":"")+">Quitado</option><option "+(p.situacao==="Parcial"?"selected":"")+">Parcial</option></select></div>"
-    +"<div class=\"fgg\"><label>Vencimento</label><input type=\"date\" id=\"f_ven\" value=\""+(p.data_vencimento||"")+"\"></div><div class=\"fgg\"><label>Pagamento</label><input type=\"date\" id=\"f_pag\" value=\""+(p.data_pagamento||"")+"\"></div>"
-    +"<div class=\"fgg\"><label>Valor Total</label><input type=\"number\" step=\".01\" id=\"f_vt\" value=\""+(p.valor_total||"")+"\"></div><div class=\"fgg\"><label>Recebido</label><input type=\"number\" step=\".01\" id=\"f_vr\" value=\""+(p.valor_recebido||"")+"\"></div>"
-    +"<div class=\"fgg\"><label>Repassado</label><input type=\"number\" step=\".01\" id=\"f_vrep\" value=\""+(p.valor_repassado||"")+"\"></div><div class=\"fgg\"><label>Data Repasse</label><input type=\"date\" id=\"f_drep\" value=\""+(p.data_repasse||"")+"\"></div>"
-    +"<div class=\"fgg\"><label>Prog. Repasse</label><input type=\"date\" id=\"f_prog\" value=\""+(p.programacao_repasse||"")+"\"></div><div class=\"fgg full\"><label>Obs.</label><textarea rows=\"2\" id=\"f_obs\">"+(p.observacoes||"")+"</textarea></div></div>"
-    +"<div style=\"display:flex;justify-content:flex-end;gap:10px;margin-top:16px\"><button class=\"btn btn-o\" onclick=\"document.getElementById('mo').remove()\">Cancelar</button><button class=\"btn btn-p\" onclick=\"saveP('"+( par?par.id:"")+"')\">Salvar</button></div></div>";
-  el.onclick=function(e){if(e.target===el)el.remove();};document.body.appendChild(el);
+    +"<div class=\"fg\">"
+    +"<div class=\"fgg\"><label>N Parcela</label><input type=\"number\" id=\"f_num\" value=\""+(p.numero_parcela!=null?p.numero_parcela:nN)+"\" ></div>"
+    +"<div class=\"fgg\"><label>Vencimento</label><input type=\"date\" id=\"f_ven\" value=\""+(p.data_vencimento||"")+"\"></div>"
+    +"<div class=\"fgg\"><label>Pagamento</label><input type=\"date\" id=\"f_pag\" value=\""+(p.data_pagamento||"")+"\"></div>"
+    +"<div class=\"fgg\"><label>Valor Total R$</label><input type=\"number\" step=\".01\" id=\"f_vt\" value=\""+(p.valor_total||"")+"\"></div>"
+    +"<div class=\"fgg\"><label>Recebido R$</label><input type=\"number\" step=\".01\" id=\"f_vr\" value=\""+(p.valor_recebido||"")+"\"></div>"
+    +"<div class=\"fgg\"><label>Repassado R$</label><input type=\"number\" step=\".01\" id=\"f_vrep\" value=\""+(p.valor_repassado||"")+"\"></div>"
+    +"<div class=\"fgg\"><label>Data Repasse</label><input type=\"date\" id=\"f_drep\" value=\""+(p.data_repasse||"")+"\"></div>"
+    +"<div class=\"fgg\"><label>Prog. Repasse</label><input type=\"date\" id=\"f_prog\" value=\""+(p.programacao_repasse||"")+"\"></div>"
+    +"<div class=\"fgg\"><label>Status Repasse</label><select id=\"f_rep\"><option value=\"Pendente\" "+((!p.status_repasse||p.status_repasse==='Pendente')?'selected':'')+">Pendente</option><option value=\"Repassado\" "+(p.status_repasse==='Repassado'?'selected':'')+">Repassado</option></select></div>"
+    +"<div class=\"fgg full\"><label>Obs.</label><textarea rows=\"2\" id=\"f_obs\">"+(p.observacoes||"")+"</textarea></div>"
+    +"</div><div style=\"display:flex;justify-content:flex-end;gap:10px;margin-top:16px\">"
+    +"<button class=\"btn btn-o\" onclick=\"document.getElementById('mo').remove()\">Cancelar</button>"
+    +"<button class=\"btn btn-p\" onclick=\"saveP('"+( par?par.id:"")+"')\">Salvar</button></div></div>";
+  el.onclick=function(e){if(e.target===el)el.remove();};
+  document.body.appendChild(el);
 }
+
 async function saveP(pid){
-  var data={acordo_id:curAcordo.id,numero_parcela:+document.getElementById("f_num").value,situacao:document.getElementById("f_sit").value,data_vencimento:document.getElementById("f_ven").value||null,data_pagamento:document.getElementById("f_pag").value||null,valor_total:+(document.getElementById("f_vt").value)||0,valor_recebido:+(document.getElementById("f_vr").value)||0,valor_repassado:+(document.getElementById("f_vrep").value)||0,data_repasse:document.getElementById("f_drep").value||null,programacao_repasse:document.getElementById("f_prog").value||null,observacoes:document.getElementById("f_obs").value||null,status_repasse:document.getElementById("f_rep")?document.getElementById("f_rep").value:"Pendente"};
-  if(pid){await sb.from("parcelas").update(data).eq("id",pid);}else{await sb.from("parcelas").insert(data);}
-  document.getElementById("mo").remove();var r=await sb.from("parcelas").select("*").eq("acordo_id",curAcordo.id).order("numero_parcela",{ascending:true});dP=r.data||[];rDT();
+  var data={
+    acordo_id:curAcordo.id,
+    numero_parcela:+document.getElementById("f_num").value,
+    data_vencimento:document.getElementById("f_ven").value||null,
+    data_pagamento:document.getElementById("f_pag").value||null,
+    valor_total:+(document.getElementById("f_vt").value)||0,
+    valor_recebido:+(document.getElementById("f_vr").value)||0,
+    valor_repassado:+(document.getElementById("f_vrep").value)||0,
+    data_repasse:document.getElementById("f_drep").value||null,
+    programacao_repasse:document.getElementById("f_prog").value||null,
+    status_repasse:document.getElementById("f_rep").value,
+    observacoes:document.getElementById("f_obs").value||null
+  };
+  if(pid){await sb.from("parcelas").update(data).eq("id",pid);}
+  else{await sb.from("parcelas").insert(data);}
+  document.getElementById("mo").remove();
+  var r=await sb.from("parcelas").select("*").eq("acordo_id",curAcordo.id).order("numero_parcela",{ascending:true});
+  dP=r.data||[];rDT();
 }
 
 // ── NOVO ACORDO ───────────────────────────────────────────
