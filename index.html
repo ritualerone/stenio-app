@@ -192,10 +192,10 @@ function rDT(){
     if(dFil==="todos")return true;if(dFil==="aberto")return p.situacao==="Aberto";
     if(dFil==="quitado")return p.situacao==="Quitado";if(dFil==="atrasado")return isLate(p);return true;
   });
-  var tG=dP.reduce(function(s,p){return s+(+p.valor_total||0);},0);
-  var tR=dP.reduce(function(s,p){return s+(+p.valor_recebido||0);},0);
-  var tRep=dP.reduce(function(s,p){return s+(+p.valor_repassado||0);},0);
-  var tA=dP.filter(function(p){return p.situacao!=="Quitado";}).reduce(function(s,p){return s+(+p.valor_total||0);},0);
+  var tG=fi.reduce(function(s,p){return s+(+p.valor_total||0);},0);
+  var tR=fi.reduce(function(s,p){return s+(+p.valor_recebido||0);},0);
+  var tRep=fi.reduce(function(s,p){return s+(+p.valor_repassado||0);},0);
+  var tA=fi.filter(function(p){return p.situacao!=="Quitado";}).reduce(function(s,p){return s+(+p.valor_total||0);},0);
   var todosQuitados=dP.length>0&&dP.every(function(p){return p.situacao==="Quitado";});
   window._pList=fi;
   var rows=fi.map(function(p,i){
