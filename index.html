@@ -72,8 +72,14 @@ var prev=[];
 
 function fmt(v){if(v==null||v==="")return"--";return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(+v);}
 function fmtD(s){if(!s)return"--";try{return new Date(s+"T12:00:00").toLocaleDateString("pt-BR");}catch(e){return s;}}
-function isLate(p){return p.situacao==="Aberto"&&p.data_vencimento&&new Date(p.data_vencimento)<new Date();}
-function badge(s){var m={Quitado:"bg",Aberto:"ba",Atrasado:"br",Parcial:"bx"};return "<span class=\"badge "+(m[s]||"bx")+"\">"+s+"</span>";}
+function isLate(p){return !p.data_pagamento&&p.data_vencimento&&new Date(p.data_vencimento)<new Date();}
+function getSit(p){
+  if(p.data_pagamento&&(+p.valor_repassado||0)>0)return "Quitado";
+  if(p.data_pagamento&&(+p.valor_repassado||0)===0)return "Recebido";
+  if(isLate(p))return "Atrasado";
+  return "Aberto";
+}
+function badge(s){var m={Quitado:"bg",Aberto:"ba",Atrasado:"br",Recebido:"bb",Parcial:"bx"};return "<span class=\"badge "+(m[s]||"bx")+"\">"+s+"</span>";}
 function mc(){return document.getElementById("mc");}
 function go(p,d1,d2){
   document.querySelectorAll(".nav-btn").forEach(function(b){b.classList.remove("active");});
@@ -190,16 +196,18 @@ async function rDetalhe(){
 function rDT(){
   var fi=dP.filter(function(p){
     if(dFil==="todos")return true;
-    if(dFil==="aberto")return p.situacao==="Aberto"&&!isLate(p);
-    if(dFil==="quitado")return p.situacao==="Quitado";
-    if(dFil==="atrasado")return isLate(p);
+    var s=getSit(p);
+    if(dFil==="aberto")return s==="Aberto";
+    if(dFil==="recebido")return s==="Recebido";
+    if(dFil==="quitado")return s==="Quitado";
+    if(dFil==="atrasado")return s==="Atrasado";
     return true;
   });
   var tG=fi.reduce(function(s,p){return s+(+p.valor_total||0);},0);
   var tR=fi.reduce(function(s,p){return s+(+p.valor_recebido||0);},0);
   var tRep=fi.reduce(function(s,p){return s+(+p.valor_repassado||0);},0);
-  var tA=fi.filter(function(p){return p.situacao!=="Quitado";}).reduce(function(s,p){return s+(+p.valor_total||0);},0);
-  var todosQuitados=dP.length>0&&dP.every(function(p){return p.situacao==="Quitado";});
+  var tA=fi.filter(function(p){var s=getSit(p);return s==="Aberto"||s==="Atrasado";}).reduce(function(s,p){return s+(+p.valor_total||0);},0);
+  var todosQuitados=dP.length>0&&dP.every(function(p){return getSit(p)==="Quitado";});
   window._pList=fi;
   var rows=fi.map(function(p,i){
     var l=isLate(p),ea=p.situacao==="Aberto"?(+p.valor_total||0):0;
@@ -210,9 +218,9 @@ function rDT(){
       +"<td style=\"color:"+((+p.valor_repassado||0)>0?"var(--green)":"inherit")+"\">"+fmt(p.valor_repassado)+"</td>"
       +"<td>"+fmtD(p.data_repasse)+"</td><td>"+fmtD(p.programacao_repasse)+"</td>"
       +"<td>"+(ea>0?"<span style=\"color:var(--amber);font-weight:600\">"+fmt(ea)+"</span>":"--")+"</td>"
-      +"<td>"+badge(l?"Atrasado":p.situacao)+"</td>"
+      +"<td>"+badge(getSit(p))+"</td>"
       +"<td><div style=\"display:flex;gap:4px\"><button class=\"btn btn-o sm\" onclick=\"openM("+i+")\">Ed.</button>"
-      +(p.situacao==="Aberto"||l?"<button class=\"btn btn-s sm\" onclick=\"quitar('"+p.id+"',"+p.valor_total+")\">OK</button>":"")
+      +(getSit(p)==="Aberto"||getSit(p)==="Atrasado"?"<button class=\"btn btn-s sm\" onclick=\"quitar('"+p.id+"',"+p.valor_total+")\">OK</button>":"")
       +"<button class=\"btn btn-d sm\" onclick=\"delP('"+p.id+"')\">X</button></div></td></tr>";
   }).join("");
   var obsHtml="";
@@ -384,8 +392,8 @@ function exportPDF(){
 })();
 
 function exportPDF(){
-  var labels={todos:"Todas as Parcelas",aberto:"Parcelas em Aberto",quitado:"Parcelas Quitadas",atrasado:"Parcelas Atrasadas"};
-  var fi=dP.filter(function(p){if(dFil==="todos")return true;if(dFil==="aberto")return p.situacao==="Aberto";if(dFil==="quitado")return p.situacao==="Quitado";if(dFil==="atrasado")return isLate(p);return true;});
+  var labels={todos:"Todas as Parcelas",aberto:"Parcelas em Aberto",quitado:"Parcelas Quitadas",atrasado:"Parcelas Atrasadas",recebido:"Recebido - Pendente de Repasse"};
+  var fi=dP.filter(function(p){if(dFil==="todos")return true;var s=getSit(p);if(dFil==="aberto")return s==="Aberto";if(dFil==="recebido")return s==="Recebido";if(dFil==="quitado")return s==="Quitado";if(dFil==="atrasado")return s==="Atrasado";return true;});
   var tG=fi.reduce(function(s,p){return s+(+p.valor_total||0);},0);
   var tR=fi.reduce(function(s,p){return s+(+p.valor_recebido||0);},0);
   var tRep=fi.reduce(function(s,p){return s+(+p.valor_repassado||0);},0);
