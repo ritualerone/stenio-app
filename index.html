@@ -74,8 +74,8 @@ function fmt(v){if(v==null||v==="")return"--";return new Intl.NumberFormat("pt-B
 function fmtD(s){if(!s)return"--";try{return new Date(s+"T12:00:00").toLocaleDateString("pt-BR");}catch(e){return s;}}
 function isLate(p){return !p.data_pagamento&&p.data_vencimento&&new Date(p.data_vencimento)<new Date();}
 function getSit(p){
-  if(p.data_pagamento&&(+p.valor_repassado||0)>0)return "Quitado";
-  if(p.data_pagamento&&(+p.valor_repassado||0)===0)return "Recebido";
+  if(p.data_pagamento&&p.status_repasse==="Repassado")return "Quitado";
+  if(p.data_pagamento&&p.status_repasse!=="Repassado")return "Recebido";
   if(isLate(p))return "Atrasado";
   return "Aberto";
 }
@@ -196,11 +196,11 @@ async function rDetalhe(){
 function rDT(){
   var fi=dP.filter(function(p){
     if(dFil==="todos")return true;
-    var s=getSit(p);
-    if(dFil==="aberto")return s==="Aberto";
-    if(dFil==="recebido")return s==="Recebido";
-    if(dFil==="quitado")return s==="Quitado";
-    if(dFil==="atrasado")return s==="Atrasado";
+    var sit=getSit(p);
+    if(dFil==="aberto")return sit==="Aberto";
+    if(dFil==="atrasado")return sit==="Atrasado";
+    if(dFil==="recebido")return sit==="Recebido";
+    if(dFil==="quitado")return sit==="Quitado";
     return true;
   });
   var tG=fi.reduce(function(s,p){return s+(+p.valor_total||0);},0);
@@ -210,42 +210,59 @@ function rDT(){
   var todosQuitados=dP.length>0&&dP.every(function(p){return getSit(p)==="Quitado";});
   window._pList=fi;
   var rows=fi.map(function(p,i){
-    var l=isLate(p),ea=p.situacao==="Aberto"?(+p.valor_total||0):0;
+    var sit=getSit(p);
+    var l=sit==="Atrasado";
+    var ea=(sit==="Aberto"||sit==="Atrasado")?(+p.valor_total||0):0;
+    var sitColor={Quitado:"bg",Aberto:"ba",Atrasado:"br",Recebido:"bb"};
     return "<tr class=\""+(l?"late-row":"")+"\"><td><strong>"+p.numero_parcela+"</strong>"+(l?" <span style=\"font-size:.65rem;color:var(--red)\">ATRASADA</span>":"")+"</td>"
       +"<td style=\"color:"+(l?"var(--red)":"inherit")+";font-weight:"+(l?600:400)+"\">"+fmtD(p.data_vencimento)+"</td>"
-      +"<td>"+fmtD(p.data_pagamento)+"</td><td><strong>"+fmt(p.valor_total)+"</strong></td>"
+      +"<td>"+fmtD(p.data_pagamento)+"</td>"
+      +"<td><strong>"+fmt(p.valor_total)+"</strong></td>"
       +"<td style=\"color:"+((+p.valor_recebido||0)>0?"var(--green)":"inherit")+"\">"+fmt(p.valor_recebido)+"</td>"
       +"<td style=\"color:"+((+p.valor_repassado||0)>0?"var(--green)":"inherit")+"\">"+fmt(p.valor_repassado)+"</td>"
-      +"<td>"+fmtD(p.data_repasse)+"</td><td>"+fmtD(p.programacao_repasse)+"</td>"
+      +"<td>"+fmtD(p.data_repasse)+"</td>"
+      +"<td>"+fmtD(p.programacao_repasse)+"</td>"
       +"<td>"+(ea>0?"<span style=\"color:var(--amber);font-weight:600\">"+fmt(ea)+"</span>":"--")+"</td>"
-      +"<td>"+badge(getSit(p))+"</td>"
-      +"<td><div style=\"display:flex;gap:4px\"><button class=\"btn btn-o sm\" onclick=\"openM("+i+")\">Ed.</button>"
-      +(getSit(p)==="Aberto"||getSit(p)==="Atrasado"?"<button class=\"btn btn-s sm\" onclick=\"quitar('"+p.id+"',"+p.valor_total+")\">OK</button>":"")
-      +"<button class=\"btn btn-d sm\" onclick=\"delP('"+p.id+"')\">X</button></div></td></tr>";
+      +"<td><span class=\"badge "+(sitColor[sit]||"bx")+"\">"+sit+"</span></td>"
+      +"<td><span class=\"badge "+( p.status_repasse==="Repassado"?"bg":"bx")+"\">"+(p.status_repasse||"Pendente")+"</span></td>"
+      +"<td><div style=\"display:flex;gap:4px\">"
+      +"<button class=\"btn btn-o sm\" onclick=\"openM("+i+")\">Ed.</button>"
+      +(sit==="Aberto"||sit==="Atrasado"?"<button class=\"btn btn-s sm\" onclick=\"quitar('"+p.id+"',"+p.valor_total+")\">OK</button>":"")
+      +(sit==="Recebido"&&p.status_repasse!=="Repassado"?"<button class=\"btn btn-p sm\" onclick=\"marcarRepassado('"+p.id+"')\">Rep.</button>":"")
+      +"<button class=\"btn btn-d sm\" onclick=\"delP('"+p.id+"')\">X</button>"
+      +"</div></td></tr>";
   }).join("");
   var obsHtml="";
   if(dA&&dA.observacao)obsHtml="<div class=\"alert-box alert-warn\" style=\"margin-bottom:16px\">&#9888; "+dA.observacao+"</div>";
   if(todosQuitados)obsHtml+="<div class=\"alert-box alert-s\" style=\"margin-bottom:16px\">&#10003; Acordo quitado.</div>";
-  mc().innerHTML="<div class=\"topbar\"><div style=\"display:flex;align-items:center;gap:12px\"><button class=\"btn btn-o sm\" onclick=\"go('clientes')\">Voltar</button>"
-    +"<div><div class=\"tb-title\">"+(dA?dA.cliente:"")+"</div><div class=\"tb-sub\">Processo: "+(dA?dA.numero_processo:"")+(dA&&dA.dono?" | Cliente: "+dA.dono:"")+"</div></div></div>"
+  mc().innerHTML="<div class=\"topbar\"><div style=\"display:flex;align-items:center;gap:12px\">"
+    +"<button class=\"btn btn-o sm\" onclick=\"go('clientes')\">Voltar</button>"
+    +"<div><div class=\"tb-title\">"+(dA?dA.cliente:"")+"</div>"
+    +"<div class=\"tb-sub\">Processo: "+(dA?dA.numero_processo:"")+(dA&&dA.dono?" | Cliente: "+dA.dono:"")+"</div></div></div>"
     +"<button class=\"btn btn-g\" onclick=\"openM()\">+ Parcela</button></div>"
     +"<div class=\"body\">"+obsHtml
-    +"<div class=\"sg\"><div class=\"sc\"><div class=\"sc-l\">Total"+(dFil!=="todos"?" ("+{aberto:"Aberto",quitado:"Quitado",atrasado:"Atrasado"}[dFil]+")":"")+"</div><div class=\"sc-v\">"+fmt(tG)+"</div></div>"
+    +"<div class=\"sg\"><div class=\"sc\"><div class=\"sc-l\">Total"+(dFil!=="todos"?" (filtro)":"")+"</div><div class=\"sc-v\">"+fmt(tG)+"</div></div>"
     +"<div class=\"sc\"><div class=\"sc-l\">Recebido</div><div class=\"sc-v g\">"+fmt(tR)+"</div></div>"
     +"<div class=\"sc\"><div class=\"sc-l\">Repassado</div><div class=\"sc-v g\">"+fmt(tRep)+"</div></div>"
     +"<div class=\"sc\"><div class=\"sc-l\">Em Aberto</div><div class=\"sc-v a\">"+fmt(tA)+"</div></div></div>"
-    +"<div class=\"card\"><div class=\"card-h\"><div class=\"card-t\">Parcelas <span style=\"font-size:.75rem;color:var(--muted);font-family:sans-serif\">"+fi.length+" de "+dP.length+"</span></div>"
-    +"<div style=\"display:flex;gap:7px;align-items:center\">"
-    +"<div class=\"tabs\"><button class=\"tab "+(dFil==="todos"?"active":"")+"\" onclick=\"dFil='todos';rDT()\">Todos</button>"
+    +"<div class=\"card\"><div class=\"card-h\"><div class=\"card-t\">Parcelas <span style=\"font-size:.73rem;color:var(--muted);font-family:sans-serif\">"+fi.length+"/"+dP.length+"</span></div>"
+    +"<div style=\"display:flex;gap:6px;align-items:center\">"
+    +"<div class=\"tabs\">"
+    +"<button class=\"tab "+(dFil==="todos"?"active":"")+"\" onclick=\"dFil='todos';rDT()\">Todos</button>"
     +"<button class=\"tab "+(dFil==="aberto"?"active":"")+"\" onclick=\"dFil='aberto';rDT()\">Aberto</button>"
+    +"<button class=\"tab "+(dFil==="atrasado"?"active":"")+"\" onclick=\"dFil='atrasado';rDT()\">Atrasado</button>"
+    +"<button class=\"tab "+(dFil==="recebido"?"active":"")+"\" style=\"color:"+(dFil==="recebido"?"inherit":"var(--blue)")+"\" onclick=\"dFil='recebido';rDT()\">Recebido</button>"
     +"<button class=\"tab "+(dFil==="quitado"?"active":"")+"\" onclick=\"dFil='quitado';rDT()\">Quitado</button>"
-    +"<button class=\"tab "+(dFil==="atrasado"?"active":"")+"\" onclick=\"dFil='atrasado';rDT()\">Atrasado</button></div>"
-    +"<button class=\"btn\" style=\"background:#f8f5ef;color:var(--navy);border:1.5px solid var(--border);padding:4px 14px;font-size:.76rem\" onclick=\"exportPDF()\">PDF &#8595;</button>"
-    +"<button class=\"btn btn-g sm\" onclick=\"openM()\">+</button></div></div>"
+    +"</div>"
+    +"<button class=\"btn\" style=\"background:#f8f5ef;color:var(--navy);border:1.5px solid var(--border);padding:4px 13px;font-size:.74rem\" onclick=\"exportPDF()\">PDF</button>"
+    +"<button class=\"btn btn-g sm\" onclick=\"openM()\">+</button>"
+    +"</div></div>"
     +(fi.length===0?"<div class=\"empty\">Nenhuma parcela</div>"
-    :"<div class=\"tw\"><table><thead><tr><th>Parc.</th><th>Venc.</th><th>Pag.</th><th>Total</th><th>Recebido</th><th>Repassado</th><th>Dt.Rep.</th><th>Prog.Rep.</th><th>Em Aberto</th><th>Sit.</th><th>Acoes</th></tr></thead>"
-    +"<tbody>"+rows+"</tbody>"
-    +"<tfoot><tr class=\"tr-tot\"><td colspan=\"3\">Somatorio ("+fi.length+")</td><td>"+fmt(tG)+"</td><td>"+fmt(tR)+"</td><td>"+fmt(tRep)+"</td><td colspan=\"2\"></td><td>"+fmt(tA)+"</td><td colspan=\"2\"></td></tr></tfoot>"
+    :"<div class=\"tw\"><table><thead><tr>"
+    +"<th>Parc.</th><th>Venc.</th><th>Pag.</th><th>Total</th><th>Recebido</th><th>Repassado</th><th>Dt.Rep.</th><th>Prog.Rep.</th><th>Em Aberto</th>"
+    +"<th>Recebimento</th><th>Repasse</th><th>Acoes</th>"
+    +"</tr></thead><tbody>"+rows+"</tbody>"
+    +"<tfoot><tr class=\"tr-tot\"><td colspan=\"3\">Somatorio ("+fi.length+")</td><td>"+fmt(tG)+"</td><td>"+fmt(tR)+"</td><td>"+fmt(tRep)+"</td><td colspan=\"2\"></td><td>"+fmt(tA)+"</td><td colspan=\"3\"></td></tr></tfoot>"
     +"</table></div>")
     +"</div></div>";
 }
