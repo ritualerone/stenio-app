@@ -189,8 +189,11 @@ async function rDetalhe(){
 }
 function rDT(){
   var fi=dP.filter(function(p){
-    if(dFil==="todos")return true;if(dFil==="aberto")return p.situacao==="Aberto";
-    if(dFil==="quitado")return p.situacao==="Quitado";if(dFil==="atrasado")return isLate(p);return true;
+    if(dFil==="todos")return true;
+    if(dFil==="aberto")return p.situacao==="Aberto"&&!isLate(p);
+    if(dFil==="quitado")return p.situacao==="Quitado";
+    if(dFil==="atrasado")return isLate(p);
+    return true;
   });
   var tG=fi.reduce(function(s,p){return s+(+p.valor_total||0);},0);
   var tR=fi.reduce(function(s,p){return s+(+p.valor_recebido||0);},0);
@@ -209,24 +212,36 @@ function rDT(){
       +"<td>"+(ea>0?"<span style=\"color:var(--amber);font-weight:600\">"+fmt(ea)+"</span>":"--")+"</td>"
       +"<td>"+badge(l?"Atrasado":p.situacao)+"</td>"
       +"<td><div style=\"display:flex;gap:4px\"><button class=\"btn btn-o sm\" onclick=\"openM("+i+")\">Ed.</button>"
-      +(p.situacao==="Aberto"?"<button class=\"btn btn-s sm\" onclick=\"quitar('"+p.id+"',"+p.valor_total+")\">OK</button>":"")
+      +(p.situacao==="Aberto"||l?"<button class=\"btn btn-s sm\" onclick=\"quitar('"+p.id+"',"+p.valor_total+")\">OK</button>":"")
       +"<button class=\"btn btn-d sm\" onclick=\"delP('"+p.id+"')\">X</button></div></td></tr>";
   }).join("");
   var obsHtml="";
-  if(dA&&dA.observacao){obsHtml="<div class=\"alert-box alert-warn\" style=\"margin-bottom:16px\">&#9888;&#65039; "+dA.observacao+"</div>";}
-  if(todosQuitados){obsHtml+="<div class=\"alert-box alert-s\" style=\"margin-bottom:16px\">&#10003; Acordo quitado — todas as parcelas foram pagas.</div>";}
+  if(dA&&dA.observacao)obsHtml="<div class=\"alert-box alert-warn\" style=\"margin-bottom:16px\">&#9888; "+dA.observacao+"</div>";
+  if(todosQuitados)obsHtml+="<div class=\"alert-box alert-s\" style=\"margin-bottom:16px\">&#10003; Acordo quitado.</div>";
   mc().innerHTML="<div class=\"topbar\"><div style=\"display:flex;align-items:center;gap:12px\"><button class=\"btn btn-o sm\" onclick=\"go('clientes')\">Voltar</button>"
     +"<div><div class=\"tb-title\">"+(dA?dA.cliente:"")+"</div><div class=\"tb-sub\">Processo: "+(dA?dA.numero_processo:"")+(dA&&dA.dono?" | Cliente: "+dA.dono:"")+"</div></div></div>"
-    +"<div style=\"display:flex;gap:8px\"><button class=\"btn btn-g\" onclick=\"openM()\">+ Parcela</button><button class=\"btn btn-o\" onclick=\"exportPDF()\">PDF</button></div>"
+    +"<button class=\"btn btn-g\" onclick=\"openM()\">+ Parcela</button></div>"
     +"<div class=\"body\">"+obsHtml
-    +"<div class=\"sg\"><div class=\"sc\"><div class=\"sc-l\">Total</div><div class=\"sc-v\">"+fmt(tG)+"</div></div><div class=\"sc\"><div class=\"sc-l\">Recebido</div><div class=\"sc-v g\">"+fmt(tR)+"</div></div><div class=\"sc\"><div class=\"sc-l\">Repassado</div><div class=\"sc-v g\">"+fmt(tRep)+"</div></div><div class=\"sc\"><div class=\"sc-l\">Em Aberto</div><div class=\"sc-v a\">"+fmt(tA)+"</div></div></div>"
-    +"<div class=\"card\"><div class=\"card-h\"><div class=\"card-t\">Parcelas</div><div style=\"display:flex;gap:7px;align-items:center\">"
-    +"<div class=\"tabs\"><button class=\"tab "+(dFil==="todos"?"active":"")+"\" onclick=\"dFil='todos';rDT()\">Todos</button><button class=\"tab "+(dFil==="aberto"?"active":"")+"\" onclick=\"dFil='aberto';rDT()\">Aberto</button><button class=\"tab "+(dFil==="quitado"?"active":"")+"\" onclick=\"dFil='quitado';rDT()\">Quitado</button><button class=\"tab "+(dFil==="atrasado"?"active":"")+"\" onclick=\"dFil='atrasado';rDT()\">Atrasado</button></div>"
-    +"<button class=\"btn btn-g sm\" onclick=\"openM()\">+</button><button class=\"btn\" style=\"background:#f8f5ef;color:var(--navy);border:1.5px solid var(--border);padding:4px 14px;font-size:.76rem\" onclick=\"exportPDF()\">PDF &#8595;</button></div></div>"
-    +(fi.length===0?"<div class=\"empty\">Nenhuma parcela</div>":"<div class=\"tw\"><table><thead><tr><th>Parc.</th><th>Venc.</th><th>Pag.</th><th>Total</th><th>Recebido</th><th>Repassado</th><th>Dt.Rep.</th><th>Prog.Rep.</th><th>Em Aberto</th><th>Sit.</th><th>Acoes</th></tr></thead><tbody>"+rows+"</tbody>"
-    +"<tfoot><tr class=\"tr-tot\"><td colspan=\"3\">Somatorio</td><td>"+fmt(tG)+"</td><td>"+fmt(tR)+"</td><td>"+fmt(tRep)+"</td><td colspan=\"2\"></td><td>"+fmt(tA)+"</td><td colspan=\"2\"></td></tr></tfoot></table></div>")
+    +"<div class=\"sg\"><div class=\"sc\"><div class=\"sc-l\">Total"+(dFil!=="todos"?" ("+{aberto:"Aberto",quitado:"Quitado",atrasado:"Atrasado"}[dFil]+")":"")+"</div><div class=\"sc-v\">"+fmt(tG)+"</div></div>"
+    +"<div class=\"sc\"><div class=\"sc-l\">Recebido</div><div class=\"sc-v g\">"+fmt(tR)+"</div></div>"
+    +"<div class=\"sc\"><div class=\"sc-l\">Repassado</div><div class=\"sc-v g\">"+fmt(tRep)+"</div></div>"
+    +"<div class=\"sc\"><div class=\"sc-l\">Em Aberto</div><div class=\"sc-v a\">"+fmt(tA)+"</div></div></div>"
+    +"<div class=\"card\"><div class=\"card-h\"><div class=\"card-t\">Parcelas <span style=\"font-size:.75rem;color:var(--muted);font-family:sans-serif\">"+fi.length+" de "+dP.length+"</span></div>"
+    +"<div style=\"display:flex;gap:7px;align-items:center\">"
+    +"<div class=\"tabs\"><button class=\"tab "+(dFil==="todos"?"active":"")+"\" onclick=\"dFil='todos';rDT()\">Todos</button>"
+    +"<button class=\"tab "+(dFil==="aberto"?"active":"")+"\" onclick=\"dFil='aberto';rDT()\">Aberto</button>"
+    +"<button class=\"tab "+(dFil==="quitado"?"active":"")+"\" onclick=\"dFil='quitado';rDT()\">Quitado</button>"
+    +"<button class=\"tab "+(dFil==="atrasado"?"active":"")+"\" onclick=\"dFil='atrasado';rDT()\">Atrasado</button></div>"
+    +"<button class=\"btn\" style=\"background:#f8f5ef;color:var(--navy);border:1.5px solid var(--border);padding:4px 14px;font-size:.76rem\" onclick=\"exportPDF()\">PDF &#8595;</button>"
+    +"<button class=\"btn btn-g sm\" onclick=\"openM()\">+</button></div></div>"
+    +(fi.length===0?"<div class=\"empty\">Nenhuma parcela</div>"
+    :"<div class=\"tw\"><table><thead><tr><th>Parc.</th><th>Venc.</th><th>Pag.</th><th>Total</th><th>Recebido</th><th>Repassado</th><th>Dt.Rep.</th><th>Prog.Rep.</th><th>Em Aberto</th><th>Sit.</th><th>Acoes</th></tr></thead>"
+    +"<tbody>"+rows+"</tbody>"
+    +"<tfoot><tr class=\"tr-tot\"><td colspan=\"3\">Somatorio ("+fi.length+")</td><td>"+fmt(tG)+"</td><td>"+fmt(tR)+"</td><td>"+fmt(tRep)+"</td><td colspan=\"2\"></td><td>"+fmt(tA)+"</td><td colspan=\"2\"></td></tr></tfoot>"
+    +"</table></div>")
     +"</div></div>";
 }
+
 async function quitar(id,v){await sb.from("parcelas").update({situacao:"Quitado",valor_recebido:v,data_pagamento:new Date().toISOString().split("T")[0]}).eq("id",id);var r=await sb.from("parcelas").select("*").eq("acordo_id",curAcordo.id).order("numero_parcela",{ascending:true});dP=r.data||[];rDT();}
 async function delP(id){if(!confirm("Excluir?"))return;await sb.from("parcelas").delete().eq("id",id);var r=await sb.from("parcelas").select("*").eq("acordo_id",curAcordo.id).order("numero_parcela",{ascending:true});dP=r.data||[];rDT();}
 function openM(idx){
