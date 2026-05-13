@@ -285,7 +285,7 @@ function openM(idx){
     +"<div class=\"fgg\"><label>Repassado R$</label><input type=\"number\" step=\".01\" id=\"f_vrep\" value=\""+(p.valor_repassado||"")+"\"></div>"
     +"<div class=\"fgg\"><label>Data Repasse</label><input type=\"date\" id=\"f_drep\" value=\""+(p.data_repasse||"")+"\"></div>"
     +"<div class=\"fgg\"><label>Prog. Repasse</label><input type=\"date\" id=\"f_prog\" value=\""+(p.programacao_repasse||"")+"\"></div>"
-    +"<div class=\"fgg\"><label>Status Repasse</label><select id=\"f_rep\"><option value=\"Pendente\" "+((!p.status_repasse||p.status_repasse==='Pendente')?'selected':'')+">Pendente</option><option value=\"Repassado\" "+(p.status_repasse==='Repassado'?'selected':'')+">Repassado</option></select></div>"
+    +"<div class=\"fgg\"><label>Status Repasse</label><select id=\"f_rep\"><option value=\"Pendente\" "+((!p.status_repasse||p.status_repasse==='Pendente')?'selected':'')+">Pendente</option><option value=\"Repassado\" "+(p.status_repasse==='Repassado'?'selected':'')+">Repassado</option><option value=\"Atrasado\" "+(p.status_repasse==='Atrasado'?'selected':'')+">Atrasado</option></select></div>"
     +"<div class=\"fgg full\"><label>Obs.</label><textarea rows=\"2\" id=\"f_obs\">"+(p.observacoes||"")+"</textarea></div>"
     +"</div><div style=\"display:flex;justify-content:flex-end;gap:10px;margin-top:16px\">"
     +"<button class=\"btn btn-o\" onclick=\"document.getElementById('mo').remove()\">Cancelar</button>"
